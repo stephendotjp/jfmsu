@@ -220,7 +220,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="text-center text-xs text-gray-400 py-6 border-t border-gray-200 bg-white">
-          ¥1,350 per regret · not affiliated with QB House ·{' '}
+          ¥1,400 per regret · not affiliated with QB House ·{' '}
           <a
             href="https://x.com/stephendotjp"
             target="_blank"

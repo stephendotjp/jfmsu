@@ -134,7 +134,7 @@ export default async function Image() {
             display: 'flex',
           }}
         >
-          QB House Japan · ranked by composite score · ¥1,350 per regret
+          QB House Japan · ranked by composite score · ¥1,400 per regret
         </div>
 
         {/* Spacer */}
