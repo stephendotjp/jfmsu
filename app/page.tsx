@@ -12,9 +12,11 @@ import { SortTabs } from '@/components/SortTabs';
 const DEFAULT = PREFECTURES.find(p => p.en === 'Osaka')!;
 
 function parseArea(address: string): string {
-  const wardMatch = address.match(/(\S+区)/);
+  // Lookbehind ensures we capture only the ward/city name, not the prefecture prefix
+  // e.g. "東京都渋谷区" → "渋谷区" not "東京都渋谷区"
+  const wardMatch = address.match(/(?<=[都道府県市])([^\s都道府県市区]+区)/);
   if (wardMatch) return translateArea(wardMatch[1]);
-  const cityMatch = address.match(/(\S+市)/);
+  const cityMatch = address.match(/(?<=[都道府県])([^\s都道府県市区]+市)/);
   return cityMatch ? translateArea(cityMatch[1]) : 'Other';
 }
 
@@ -221,7 +223,15 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="text-center text-xs text-gray-400 py-6 border-t border-gray-200 bg-white">
-          ¥1,350 per regret · not affiliated with QB House
+          ¥1,350 per regret · not affiliated with QB House ·{' '}
+          <a
+            href="https://x.com/stephendotjp"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-600 underline underline-offset-2"
+          >
+            @stephendotjp
+          </a>
         </footer>
       </div>
     </>
