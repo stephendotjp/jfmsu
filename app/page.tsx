@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Location, SortMode } from '@/lib/types';
+import { PREFECTURES, type Prefecture } from '@/lib/prefectures';
 import { LocationCard } from '@/components/LocationCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { SortTabs } from '@/components/SortTabs';
+
+const DEFAULT = PREFECTURES.find(p => p.en === 'Osaka')!;
 
 function parseArea(address: string): string {
   const wardMatch = address.match(/(\S+区)/);
@@ -22,8 +25,7 @@ function sortLocations(locs: Location[], mode: SortMode): Location[] {
 }
 
 export default function Home() {
-  const [city, setCity] = useState('Osaka');
-  const [inputCity, setInputCity] = useState('Osaka');
+  const [prefecture, setPrefecture] = useState<Prefecture>(DEFAULT);
   const [locations, setLocations] = useState<Location[]>([]);
   const [isMock, setIsMock] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,6 @@ export default function Home() {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      // start fading in at 20% scroll, fully visible at 80%
       const start = maxScroll * 0.2;
       const end = maxScroll * 0.8;
       setBgOpacity(Math.max(0, Math.min(1, (scrollY - start) / (end - start))));
@@ -48,7 +49,8 @@ export default function Home() {
   useEffect(() => {
     setLoading(true);
     setError(false);
-    fetch(`/api/locations?city=${encodeURIComponent(city)}`)
+    setAreaFilter('All');
+    fetch(`/api/locations?city=${encodeURIComponent(prefecture.query)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: { locations: Location[]; source: string }) => {
         setLocations(data.locations);
@@ -56,7 +58,7 @@ export default function Home() {
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [city]);
+  }, [prefecture]);
 
   const areas = useMemo(() => {
     const set = new Set(locations.map((l) => parseArea(l.address)));
@@ -67,12 +69,6 @@ export default function Home() {
     const filtered = areaFilter === 'All' ? locations : locations.filter((l) => parseArea(l.address) === areaFilter);
     return sortLocations(filtered, sortMode);
   }, [locations, sortMode, areaFilter]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCity(inputCity.trim() || 'Osaka');
-    setAreaFilter('All');
-  };
 
   return (
     <>
@@ -89,7 +85,6 @@ export default function Home() {
         />
       </div>
 
-      {/* Page content sits above the background image */}
       <div className="flex flex-col min-h-screen relative" style={{ zIndex: 10 }}>
         {/* Header */}
         <header className="bg-[#00004b] text-white py-8 px-4">
@@ -109,24 +104,25 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Search bar */}
-        <div className="bg-[#00006e] px-4 py-4">
+        {/* Prefecture picker */}
+        <div className="bg-[#00006e] px-4 py-3">
           <div className="max-w-2xl mx-auto">
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <input
-                type="text"
-                value={inputCity}
-                onChange={(e) => setInputCity(e.target.value)}
-                placeholder="City or area (e.g. Osaka, Tokyo, Shinjuku)"
-                className="flex-1 rounded-lg px-4 py-2.5 text-sm text-gray-900 bg-white border-0 outline-none focus:ring-2 focus:ring-white/40"
-              />
-              <button
-                type="submit"
-                className="bg-white text-[#00004b] font-bold px-5 py-2.5 rounded-lg text-sm hover:bg-[#e8e8f5] transition-colors"
-              >
-                Search
-              </button>
-            </form>
+            <p className="text-white/50 text-xs uppercase tracking-wider mb-2">Prefecture</p>
+            <div className="flex flex-wrap gap-1.5">
+              {PREFECTURES.map((p) => (
+                <button
+                  key={p.en}
+                  onClick={() => setPrefecture(p)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    prefecture.en === p.en
+                      ? 'bg-white text-[#00004b]'
+                      : 'bg-white/10 text-white hover:bg-white/25'
+                  }`}
+                >
+                  {p.en}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -150,7 +146,7 @@ export default function Home() {
               </div>
               {isMock && (
                 <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
-                  demo data · Osaka only
+                  demo data
                 </span>
               )}
             </div>
@@ -165,16 +161,16 @@ export default function Home() {
           {!loading && error && (
             <div className="text-center py-16 text-gray-500">
               <p className="text-4xl mb-3">✂️</p>
-              <p className="font-semibold">Google Maps couldn&apos;t find any QB Houses here.</p>
-              <p className="text-sm mt-1">You&apos;re on your own.</p>
+              <p className="font-semibold">Couldn&apos;t load locations for {prefecture.en}.</p>
+              <p className="text-sm mt-1">Try another prefecture.</p>
             </div>
           )}
 
           {!loading && !error && displayed.length === 0 && (
             <div className="text-center py-16 text-gray-500">
               <p className="text-4xl mb-3">✂️</p>
-              <p className="font-semibold">No locations found.</p>
-              <p className="text-sm mt-1">Try a different city.</p>
+              <p className="font-semibold">No QB Houses found in {prefecture.en}.</p>
+              <p className="text-sm mt-1">Lucky you.</p>
             </div>
           )}
 
