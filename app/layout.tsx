@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.className}>
-      <body className="min-h-screen flex flex-col bg-[#f2f2fa]">{children}</body>
+      <body className="min-h-screen flex flex-col bg-[#f2f2fa]">{children}<Analytics /></body>
     </html>
   );
 }
