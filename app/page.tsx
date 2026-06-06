@@ -76,16 +76,16 @@ export default function Home() {
 
   return (
     <>
-      {/* Scroll-driven avatar — desktop only, fades in toward the danger zone */}
+      {/* Scroll-driven avatar — desktop only, sits in the taskbar area */}
       <div
-        className="hidden md:block fixed right-8 top-1/2 -translate-y-1/2 pointer-events-none select-none"
+        className="hidden md:block fixed bottom-0 right-6 pointer-events-none select-none"
         style={{ opacity: bgOpacity, zIndex: 5, transition: 'opacity 200ms linear' }}
         aria-hidden="true"
       >
         <img
           src="/jfmsu.png"
           alt=""
-          className="w-[150px] h-[150px] object-cover object-top rounded-xl shadow-lg"
+          className="w-[150px] h-[150px] object-cover object-top rounded-t-xl"
         />
       </div>
 
