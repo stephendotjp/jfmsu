@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Location, SortMode } from '@/lib/types';
 import { PREFECTURES, type Prefecture } from '@/lib/prefectures';
+import { jfmsuScore, relativeTier } from '@/lib/risk';
 import { LocationCard } from '@/components/LocationCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { SortTabs } from '@/components/SortTabs';
@@ -14,14 +15,6 @@ function parseArea(address: string): string {
   if (wardMatch) return wardMatch[1];
   const cityMatch = address.match(/(\S+市)/);
   return cityMatch ? cityMatch[1] : 'Other';
-}
-
-function sortLocations(locs: Location[], mode: SortMode): Location[] {
-  return [...locs].sort((a, b) => {
-    if (mode === 'top') return b.rating - a.rating;
-    if (mode === 'reviewed') return b.reviewCount - a.reviewCount;
-    return a.rating - b.rating;
-  });
 }
 
 export default function Home() {
@@ -60,15 +53,40 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, [prefecture]);
 
+  // Mean raw rating across all returned locations — used for Bayesian shrinkage
+  const cityMean = useMemo(() => {
+    if (locations.length === 0) return 0;
+    return locations.reduce((s, l) => s + l.rating, 0) / locations.length;
+  }, [locations]);
+
   const areas = useMemo(() => {
     const set = new Set(locations.map((l) => parseArea(l.address)));
     return ['All', ...Array.from(set).sort()];
   }, [locations]);
 
+  // Filtered set (before sort)
+  const filtered = useMemo(() =>
+    areaFilter === 'All' ? locations : locations.filter(l => parseArea(l.address) === areaFilter),
+    [locations, areaFilter]
+  );
+
+  // Quality rank map — always sorted best→worst by jfmsuScore so tiers don't
+  // flip when the user switches to a different sort mode
+  const qualityRankMap = useMemo(() => {
+    const sorted = [...filtered].sort(
+      (a, b) => jfmsuScore(b.rating, b.reviewCount, cityMean) - jfmsuScore(a.rating, a.reviewCount, cityMean)
+    );
+    return new Map(sorted.map((l, i) => [l.placeId, i + 1]));
+  }, [filtered, cityMean]);
+
+  // Displayed list — re-ordered by the active sort tab
   const displayed = useMemo(() => {
-    const filtered = areaFilter === 'All' ? locations : locations.filter((l) => parseArea(l.address) === areaFilter);
-    return sortLocations(filtered, sortMode);
-  }, [locations, sortMode, areaFilter]);
+    return [...filtered].sort((a, b) => {
+      if (sortMode === 'top')      return jfmsuScore(b.rating, b.reviewCount, cityMean) - jfmsuScore(a.rating, a.reviewCount, cityMean);
+      if (sortMode === 'reviewed') return b.reviewCount - a.reviewCount;
+      return jfmsuScore(a.rating, a.reviewCount, cityMean) - jfmsuScore(b.rating, b.reviewCount, cityMean);
+    });
+  }, [filtered, sortMode, cityMean]);
 
   return (
     <>
@@ -182,9 +200,20 @@ export default function Home() {
 
           {!loading && !error && displayed.length > 0 && (
             <div className="space-y-3">
-              {displayed.map((loc, i) => (
-                <LocationCard key={loc.placeId} location={loc} rank={i + 1} />
-              ))}
+              {displayed.map((loc, i) => {
+                const qualityRank = qualityRankMap.get(loc.placeId) ?? i + 1;
+                const tier = relativeTier(qualityRank, displayed.length);
+                const score = jfmsuScore(loc.rating, loc.reviewCount, cityMean);
+                return (
+                  <LocationCard
+                    key={loc.placeId}
+                    location={loc}
+                    rank={i + 1}
+                    tier={tier}
+                    score={score}
+                  />
+                );
+              })}
             </div>
           )}
         </main>
