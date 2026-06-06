@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { Location, SortMode } from '@/lib/types';
 import { PREFECTURES, type Prefecture } from '@/lib/prefectures';
 import { jfmsuScore, relativeTier } from '@/lib/risk';
+import { translateArea } from '@/lib/areaNames';
 import { LocationCard } from '@/components/LocationCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { SortTabs } from '@/components/SortTabs';
@@ -12,9 +13,9 @@ const DEFAULT = PREFECTURES.find(p => p.en === 'Osaka')!;
 
 function parseArea(address: string): string {
   const wardMatch = address.match(/(\S+区)/);
-  if (wardMatch) return wardMatch[1];
+  if (wardMatch) return translateArea(wardMatch[1]);
   const cityMatch = address.match(/(\S+市)/);
-  return cityMatch ? cityMatch[1] : 'Other';
+  return cityMatch ? translateArea(cityMatch[1]) : 'Other';
 }
 
 export default function Home() {
