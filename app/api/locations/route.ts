@@ -9,38 +9,47 @@ export async function GET(req: NextRequest) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
-    return NextResponse.json(MOCK_LOCATIONS);
+    return NextResponse.json({ locations: MOCK_LOCATIONS, source: 'mock' });
   }
 
   try {
     const res = await fetch(PLACES_URL, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
         'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.id,places.location',
       },
       body: JSON.stringify({ textQuery: `QB House ${city}`, languageCode: 'ja', maxResultCount: 20 }),
-      next: { revalidate: 3600 },
     });
 
     if (!res.ok) {
-      return NextResponse.json(MOCK_LOCATIONS);
+      const errText = await res.text();
+      console.error('Places API error:', res.status, errText);
+      return NextResponse.json({ locations: MOCK_LOCATIONS, source: 'mock', apiError: `${res.status}: ${errText}` });
     }
 
     const data = await res.json();
-    const places: Location[] = (data.places ?? []).map((p: Record<string, unknown>) => ({
-      name: (p.displayName as { text?: string })?.text ?? 'QB House',
-      address: (p.formattedAddress as string) ?? '',
-      rating: (p.rating as number) ?? 0,
-      reviewCount: (p.userRatingCount as number) ?? 0,
-      placeId: (p.id as string) ?? '',
-      lat: (p.location as { latitude?: number })?.latitude ?? 0,
-      lng: (p.location as { longitude?: number })?.longitude ?? 0,
-    }));
+    const places: Location[] = (data.places ?? [])
+      .filter((p: Record<string, unknown>) => typeof p.rating === 'number')
+      .map((p: Record<string, unknown>) => ({
+        name: (p.displayName as { text?: string })?.text ?? 'QB House',
+        address: (p.formattedAddress as string) ?? '',
+        rating: p.rating as number,
+        reviewCount: (p.userRatingCount as number) ?? 0,
+        placeId: (p.id as string) ?? '',
+        lat: (p.location as { latitude?: number })?.latitude ?? 0,
+        lng: (p.location as { longitude?: number })?.longitude ?? 0,
+      }));
 
-    return NextResponse.json(places.length ? places : MOCK_LOCATIONS);
-  } catch {
-    return NextResponse.json(MOCK_LOCATIONS);
+    if (places.length === 0) {
+      return NextResponse.json({ locations: MOCK_LOCATIONS, source: 'mock' });
+    }
+
+    return NextResponse.json({ locations: places, source: 'api' });
+  } catch (err) {
+    console.error('Places fetch failed:', err);
+    return NextResponse.json({ locations: MOCK_LOCATIONS, source: 'mock' });
   }
 }

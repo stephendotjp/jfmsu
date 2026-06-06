@@ -25,6 +25,7 @@ export default function Home() {
   const [city, setCity] = useState('Osaka');
   const [inputCity, setInputCity] = useState('Osaka');
   const [locations, setLocations] = useState<Location[]>([]);
+  const [isMock, setIsMock] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('top');
@@ -35,7 +36,10 @@ export default function Home() {
     setError(false);
     fetch(`/api/locations?city=${encodeURIComponent(city)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data: Location[]) => setLocations(data))
+      .then((data: { locations: Location[]; source: string }) => {
+        setLocations(data.locations);
+        setIsMock(data.source === 'mock');
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [city]);
@@ -100,18 +104,25 @@ export default function Home() {
       {/* Main content */}
       <main className="flex-1 px-4 py-6 max-w-2xl mx-auto w-full">
         {!loading && !error && locations.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-3 mb-5 items-start sm:items-center">
-            <SortTabs active={sortMode} onChange={setSortMode} />
-            {areas.length > 2 && (
-              <select
-                value={areaFilter}
-                onChange={(e) => setAreaFilter(e.target.value)}
-                className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00004b]"
-              >
-                {areas.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
+          <div className="flex flex-col sm:flex-row gap-3 mb-5 items-start sm:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <SortTabs active={sortMode} onChange={setSortMode} />
+              {areas.length > 2 && (
+                <select
+                  value={areaFilter}
+                  onChange={(e) => setAreaFilter(e.target.value)}
+                  className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00004b]"
+                >
+                  {areas.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            {isMock && (
+              <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
+                demo data · Osaka only
+              </span>
             )}
           </div>
         )}
