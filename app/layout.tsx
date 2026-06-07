@@ -6,19 +6,19 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'just fuck my shit up | QB House ranker',
+  title: 'just f*** my shit up | QB House ranker',
   description: 'QB House Japan ranked by composite score. Highest = least likely to ruin your life. ¥1,400 per regret.',
   openGraph: {
     title: 'just fuck my shit up',
     description: 'QB House Japan ranked by composite score. ¥1,400 per regret.',
     url: 'https://jfmsu.vercel.app',
-    siteName: 'just fuck my shit up',
+    siteName: 'just f*** my shit up',
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'just fuck my shit up',
+    title: 'just f*** my shit up',
     description: 'QB House Japan ranked by composite score. ¥1,400 per regret.',
   },
   icons: {
