@@ -46,4 +46,4 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-*¥1,350 per regret · not affiliated with QB House*
+*¥1,400 per regret · not affiliated with QB House*
